@@ -1,0 +1,85 @@
+# ============================================================
+# SW Card Hunter — Konfiguration
+# Bearbeite diese Datei um Charaktere, Budget und Schwellenwerte anzupassen
+# ============================================================
+
+# Charakter-Whitelist — gilt NUR für Autogramm + Nummerierte Karten
+# Vintage Karten (1977-1983) werden OHNE Charakter-Filter gesucht
+characters_whitelist:
+  # Skywalker-Saga
+  - "Anakin Skywalker"
+  - "Darth Vader"
+  - "Luke Skywalker"
+  - "Han Solo"
+  - "Obi-Wan Kenobi"
+  - "Padme Amidala"
+  - "Leia Organa"
+  # Mandalorian-Universum
+  - "Boba Fett"
+  - "Jango Fett"
+  - "The Mandalorian"
+  - "Din Djarin"
+  # Weitere Charaktere
+  - "Yoda"
+  - "Chewbacca"
+  - "R2-D2"
+  - "Lando Calrissian"
+  - "Moff Gideon"
+  - "Ahsoka Tano"
+  - "Grogu"
+  - "Rey"
+  - "Kylo Ren"
+  # Schauspieler-Namen (für Autogramm-Suche)
+  - "Mark Hamill"
+  - "Harrison Ford"
+  - "Hayden Christensen"
+  - "Ewan McGregor"
+  - "Pedro Pascal"
+  - "Carrie Fisher"
+  - "Billy Dee Williams"
+  - "Anthony Daniels"
+
+# Kartentypen — true = aktiv, false = deaktiviert
+card_types:
+  autographs: true    # Autogramm-Karten (mit Charakter-Filter)
+  vintage: true       # 1977-1983 Vintage (OHNE Charakter-Filter)
+  numbered: true      # Nummerierte Parallels (mit Charakter-Filter)
+  base: false         # Normale Basis-Karten
+
+# PSA Grading
+grading:
+  provider: "PSA"
+  min_grade: 8        # Nur PSA 8, 9, 10
+
+# Numbered Cards: maximale Auflage
+numbered_max: 99      # Nur /99 oder seltener (/25, /10, /5, 1/1)
+
+# Deal-Alert: wie weit unter Marktdurchschnitt muss ein Angebot sein?
+deal_threshold_percent: 15   # 15% = Alert
+
+# Mindestanzahl Verkäufe damit der Marktpreis als verlässlich gilt
+min_sales_for_avg: 3
+
+# Wie oft läuft der Bot?
+scheduler_interval_minutes: 30
+
+# Preislimits pro Kategorie (in USD)
+# Angebote außerhalb dieser Grenzen werden ignoriert
+price_limits:
+  autographs:
+    min: 50
+    max: 2000
+  vintage:
+    min: 20
+    max: 500
+  numbered:
+    min: 20
+    max: 300
+
+# Analyse-Zeitraum für Marktpreise (in Tagen)
+market_lookback_days: 90
+
+# Logging
+logging:
+  level: "INFO"       # DEBUG / INFO / WARNING / ERROR
+  file: "logs/bot.log"

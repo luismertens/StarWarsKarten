@@ -1,0 +1,24 @@
+# API Keys — niemals in Git!
+.env
+
+# Datenbank
+data/*.db
+
+# Logs
+logs/*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+dist/
+build/
+
+# macOS
+.DS_Store
+
+# Jupyter
+.ipynb_checkpoints/
+notebooks/.ipynb_checkpoints/

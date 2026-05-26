@@ -1,0 +1,10 @@
+requests==2.31.0
+beautifulsoup4==4.12.3
+lxml==5.2.1
+python-dotenv==1.0.1
+pyyaml==6.0.1
+notion-client==2.2.1
+python-telegram-bot==20.8
+APScheduler==3.10.4
+pandas==2.2.2
+fake-useragent==1.5.1

@@ -1,29 +1,64 @@
-# SW Card Hunter — Projektstruktur
+# SW Card Hunter — Projektdokumentation
 
 ## Ziel
-Automatisiertes Tool das Star Wars Sammelkarten auf eBay überwacht, Preise analysiert und gute Deals per Telegram meldet. Alle Daten landen in Notion.
+Automatisierter Bot der Star Wars Sammelkarten auf eBay überwacht, Preise analysiert und gute Deals per Telegram meldet. Alle Daten landen in Notion.
 
 ---
 
 ## Fokus-Kartentypen
-1. **Autogramm-Karten** (On-Card, offizielles Topps Certified Auto, PSA-bewertet)
-2. **Vintage Karten 1977–1983** (PSA-bewertet, gute Deals für jeweilige Note)
-3. **Nummerierte Parallels** (PSA-bewertet, Deals unter Marktdurchschnitt)
+1. **Autogramm-Karten** — mit Charakter-Filter (Whitelist in config.yaml)
+2. **Vintage Karten 1977–1983** — KEIN Charakter-Filter, jede PSA-Karte zu gutem Preis
+3. **Nummerierte Parallels /99 oder seltener** — mit Charakter-Filter
 
-> Regel: **Nur PSA-gegraded Karten** werden getrackt und gekauft.
+> Regel: **Nur PSA-gegraded Karten** (PSA 8, 9, 10) werden getrackt.
+
+---
+
+## Aktueller Stand
+
+### ✅ Phase 1 — Setup (abgeschlossen)
+- Projektstruktur unter `sw-card-hunter/` angelegt
+- `requirements.txt`, `.env.example`, `config.yaml` erstellt
+- SQLite-Datenbank-Schema (Tabellen: `cards`, `deals`, `price_history`)
+- `src/main.py` mit Scheduler-Grundgerüst
+- Alle API Keys in `.env` eingetragen (außer eBay — wird noch reviewed)
+
+### ✅ Phase 2 — PriceCharting Scraper (abgeschlossen)
+- `src/scraper/pricecharting.py` vollständig implementiert
+- **4.014 Karten** in lokaler SQLite-Datenbank gespeichert:
+  - Nummerierte Parallels: 2.173 Karten
+  - Vintage (1977–1983): 1.209 Karten
+  - Autogramm-Karten: 632 Karten
+- Charakter-Whitelist-Filter mit Wortgrenzen (verhindert Fehl-Matches)
+- Rate-Limiting: 1,5 Sekunden zwischen Requests
+
+### ⏳ Phase 3 — eBay Integration (wartet auf eBay API Key)
+- eBay Developer Account submitted, wird innerhalb 24h reviewed
+- Nächste Session: eBay Finding API einbinden
+
+### 🔲 Phase 4 — Deal-Erkennung + Telegram Alerts
+### 🔲 Phase 5 — Notion Sync
+### 🔲 Phase 6 — Automatisierung / Deployment
+
+---
+
+## Was ist SQLite vs. Notion?
+
+**SQLite** (`data/cards.db`) = lokale Datenbank auf dem Mac. Nur eine Datei auf der Festplatte, kein Online-Service. Der Bot liest und schreibt hier alle Daten intern — als schneller Zwischenspeicher.
+
+**Notion** = kommt in Phase 5. Dann werden alle Karten und Deals aus SQLite nach Notion synchronisiert, so dass du dort ein übersichtliches Dashboard hast.
 
 ---
 
 ## Tech-Stack
 
-| Tool | Zweck | Kosten |
+| Tool | Zweck | Status |
 |---|---|---|
-| Python 3.11+ | Hauptsprache | Kostenlos |
-| eBay Finding API | Listings + Sold Prices abrufen | Kostenlos |
-| PriceCharting Scraper | Karten-Datenbank aufbauen | Kostenlos |
-| Notion API | Daten speichern + visualisieren | Kostenlos |
-| Telegram Bot API | Deal-Alerts senden | Kostenlos |
-| SQLite | Lokale Zwischenspeicherung | Kostenlos |
+| Python / SQLite | Hauptsprache + lokale DB | ✅ läuft |
+| PriceCharting Scraper | Karten-Datenbank aufbauen | ✅ 4.014 Karten |
+| eBay Finding API | Listings + Sold Prices | ⏳ Key ausstehend |
+| Telegram Bot API | Deal-Alerts senden | ✅ Key vorhanden |
+| Notion API | Dashboard + Sync | ✅ Key vorhanden |
 
 ---
 
@@ -31,97 +66,87 @@ Automatisiertes Tool das Star Wars Sammelkarten auf eBay überwacht, Preise anal
 
 ```
 sw-card-hunter/
-│
 ├── README.md
 ├── requirements.txt
 ├── .env                          # API Keys (nie in Git!)
-├── config.yaml                   # Suchparameter, Schwellenwerte
+├── .env.example                  # Vorlage mit allen Key-Namen
+├── config.yaml                   # Suchparameter, Whitelist, Schwellenwerte
 │
 ├── data/
-│   └── cards.db                  # SQLite Datenbank
+│   └── cards.db                  # SQLite — 4.014 Karten gespeichert
+│
+├── logs/
+│   └── bot.log                   # Wird beim Start angelegt
 │
 ├── src/
+│   ├── main.py                   # Einstiegspunkt + APScheduler (alle 30 Min)
+│   ├── db.py                     # SQLite Schema + Hilfsfunktionen
+│   │
 │   ├── scraper/
-│   │   └── pricecharting.py      # Karten-Datenbank von PriceCharting aufbauen
+│   │   └── pricecharting.py      # ✅ Fertig — scrapt alle Star Wars Sets
 │   │
 │   ├── ebay/
-│   │   ├── search.py             # Aktuelle Listings abrufen
-│   │   └── sold.py               # Sold Listings / Marktpreise
+│   │   ├── search.py             # 🔲 Aktuelle PSA-Listings abrufen
+│   │   └── sold.py               # 🔲 Sold Listings / Marktpreise
 │   │
 │   ├── analyzer/
-│   │   ├── pricing.py            # Durchschnittspreis, Median, PSA-Prämie berechnen
-│   │   └── deals.py              # Deal-Score berechnen (wie gut ist ein Angebot)
+│   │   ├── pricing.py            # 🔲 Durchschnitt, Median berechnen
+│   │   └── deals.py              # 🔲 Deal-Score (15% unter Markt = Alert)
 │   │
 │   ├── notion/
-│   │   └── sync.py               # Daten in Notion Datenbank schreiben
+│   │   └── sync.py               # 🔲 Karten + Deals nach Notion schreiben
 │   │
-│   ├── telegram/
-│   │   └── alerts.py             # Telegram Benachrichtigungen senden
-│   │
-│   └── main.py                   # Hauptprogramm, Scheduler
+│   └── telegram/
+│       └── alerts.py             # 🔲 Deal-Benachrichtigungen senden
 │
 └── notebooks/
-    └── market_analysis.ipynb     # Manuelle Analysen, Experimente
+    └── market_analysis.ipynb     # Manuelle Analysen
 ```
 
 ---
 
 ## Konfiguration (config.yaml)
 
+Alle Einstellungen direkt in `config.yaml` bearbeiten:
+
 ```yaml
-# Welche Charaktere werden überwacht
-characters:
+# Charakter-Whitelist — gilt NUR für Autogramm + Nummerierte Karten
+# Vintage Karten werden OHNE Charakter-Filter gesucht
+characters_whitelist:
   - "Anakin Skywalker"
   - "Darth Vader"
   - "Luke Skywalker"
   - "Han Solo"
+  - "Obi-Wan Kenobi"
+  - "Padme Amidala"
+  - "Leia Organa"
   - "Boba Fett"
   - "Jango Fett"
-  - "Padme Amidala"
-  - "Obi-Wan Kenobi"
+  - "The Mandalorian"
+  - "Yoda"
+  - "Ahsoka Tano"
+  - "Rey" / "Kylo Ren"
+  - "Mark Hamill" / "Harrison Ford" / "Hayden Christensen"
+  # ... (28 Einträge gesamt, in config.yaml vollständig)
 
-# Nur PSA-gegraded Karten
-grading:
-  provider: "PSA"
-  min_grade: 8          # Nur PSA 8, 9, 10
-
-# Kartentypen die überwacht werden
-card_types:
-  autographs: true       # Autogramm-Karten
-  vintage: true          # 1977-1983 Vintage
-  numbered: true         # Nummerierte Parallels
-  base: false            # Normale Basis-Karten nicht
-
-# Numbered Cards: nur bis welche Auflage?
-numbered_max: 99         # Nur /99 oder seltener
-
-# Deal-Alert: wenn Preis X% unter Durchschnitt liegt
 deal_threshold_percent: 15   # 15% unter Marktdurchschnitt = Alert
-
-# Wie oft läuft der Bot?
+numbered_max: 99             # Nur /99 oder seltener
 scheduler_interval_minutes: 30
 
-# Preislimits pro Kategorie (in USD)
 price_limits:
-  autographs:
-    min: 50
-    max: 2000
-  vintage:
-    min: 20
-    max: 500
-  numbered:
-    min: 20
-    max: 300
+  autographs: {min: 50, max: 2000}
+  vintage:    {min: 20, max: 500}
+  numbered:   {min: 20, max: 300}
 ```
 
 ---
 
-## Notion Datenbank Struktur
+## Notion Datenbank Struktur (für Phase 5 anlegen)
 
-### Tabelle 1: `Cards` (alle bekannten Karten)
+### Tabelle 1: `Cards`
 | Property | Typ | Beschreibung |
 |---|---|---|
-| Name | Title | Kartenname z.B. "Anakin Skywalker Auto /25" |
+| Name | Title | z.B. "Anakin Skywalker Auto /25" |
 | Charakter | Select | Anakin, Luke, Vader etc. |
 | Set | Text | z.B. "2025 Topps Masterwork" |
 | Typ | Select | Auto / Vintage / Numbered |
@@ -135,7 +160,7 @@ price_limits:
 | eBay Link | URL | Sold Listings Link |
 | PriceCharting Link | URL | |
 
-### Tabelle 2: `Deals` (gemeldete Deals)
+### Tabelle 2: `Deals`
 | Property | Typ | Beschreibung |
 |---|---|---|
 | Karte | Relation | Verweis auf Cards Tabelle |
@@ -148,92 +173,46 @@ price_limits:
 
 ---
 
-## Ablauf — wie der Bot funktioniert
+## Bot starten
+
+```bash
+cd sw-card-hunter/src
+python main.py
+```
+
+Der Bot startet, baut die DB auf (falls nicht vorhanden) und läuft dann alle 30 Minuten.
+
+---
+
+## Nächste Session — Phase 3
+
+**Voraussetzung:** eBay App ID, Cert ID, Dev ID in `.env` eintragen.
+
+Was dann gebaut wird:
+1. `src/ebay/sold.py` — Sold Listings der letzten 90 Tage per eBay Finding API
+2. `src/ebay/search.py` — Aktuelle PSA-Listings abrufen
+3. `src/analyzer/pricing.py` — Marktpreise (Avg, Median, Liquidität) berechnen
+4. `src/analyzer/deals.py` — Deal-Erkennung (≥15% unter Markt)
+5. Deal-Ergebnis in SQLite speichern
+
+---
+
+## API Keys
 
 ```
-1. [Einmalig] PriceCharting scrapen
-   → Alle Star Wars Karten in SQLite speichern
-   → Nach Charakter + Typ filtern
-
-2. [Alle 30 Min] eBay API abfragen
-   → Aktuelle PSA Listings für Ziel-Charaktere
-   → Sold Listings der letzten 90 Tage
-
-3. [Analyse]
-   → Durchschnittspreis berechnen
-   → Aktuelles Angebot mit Durchschnitt vergleichen
-   → Deal-Score berechnen
-
-4. [Alert]
-   → Wenn Deal-Score > Schwellenwert:
-     → Telegram Nachricht senden
-     → Eintrag in Notion Deals Tabelle
-
-5. [Notion Sync]
-   → Alle Marktpreise in Cards Tabelle aktualisieren
+# .env Datei (niemals in Git!)
+EBAY_APP_ID=        ← ⏳ ausstehend
+EBAY_CERT_ID=       ← ⏳ ausstehend
+EBAY_DEV_ID=        ← ⏳ ausstehend
+NOTION_TOKEN=       ← ✅ vorhanden
+NOTION_CARDS_DB_ID= ← ✅ vorhanden
+NOTION_DEALS_DB_ID= ← ✅ vorhanden
+TELEGRAM_BOT_TOKEN= ← ✅ vorhanden
+TELEGRAM_CHAT_ID=   ← ✅ vorhanden
 ```
 
 ---
 
-## Schritt-für-Schritt Umsetzung
+## Kosten: €0/Monat
 
-### Phase 1 — Setup (Tag 1)
-- [ ] Python Umgebung einrichten
-- [ ] eBay Developer Account erstellen → API Key holen
-- [ ] Notion Integration erstellen → Token holen
-- [ ] Telegram Bot erstellen via BotFather → Token holen
-- [ ] .env Datei mit allen Keys anlegen
-- [ ] requirements.txt installieren
-
-### Phase 2 — Datenbasis (Tag 2)
-- [ ] PriceCharting Scraper schreiben
-- [ ] Karten nach Charakter + Typ filtern
-- [ ] SQLite Datenbank befüllen
-
-### Phase 3 — eBay Integration (Tag 3)
-- [ ] eBay Finding API einrichten
-- [ ] Sold Listings für Test-Charakter abrufen
-- [ ] Preisanalyse berechnen
-
-### Phase 4 — Alerts (Tag 4)
-- [ ] Telegram Bot einrichten
-- [ ] Deal-Erkennung implementieren
-- [ ] Test-Alert senden
-
-### Phase 5 — Notion Sync (Tag 5)
-- [ ] Notion API Tabellen anlegen
-- [ ] Sync-Script schreiben
-- [ ] Alles zusammenbauen in main.py
-
-### Phase 6 — Automatisierung
-- [ ] Scheduler einrichten (läuft alle 30 Min)
-- [ ] Auf eigenem Rechner oder kostenlosem Server deployen
-
----
-
-## API Keys die du brauchst
-
-```
-# .env Datei (nie teilen!)
-EBAY_APP_ID=
-EBAY_CERT_ID=
-EBAY_DEV_ID=
-NOTION_TOKEN=
-NOTION_CARDS_DB_ID=
-NOTION_DEALS_DB_ID=
-TELEGRAM_BOT_TOKEN=
-TELEGRAM_CHAT_ID=
-```
-
----
-
-## Kosten
-
-| Service | Kosten |
-|---|---|
-| eBay API | Kostenlos |
-| Notion API | Kostenlos |
-| Telegram Bot | Kostenlos |
-| Python / SQLite | Kostenlos |
-| Server (optional) | Kostenlos via GitHub Actions oder Railway Free Tier |
-| **Gesamt** | **€0/Monat** |
+Alle genutzten Services sind kostenlos.
