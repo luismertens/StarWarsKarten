@@ -1,17 +1,22 @@
-"""eBay Finding API — aktuelle PSA-Listings abrufen.
-
-Phase 3 Implementierung.
-"""
+"""eBay Finding API — aktuelle PSA-Listings abrufen."""
 
 import logging
+
+from ebay.client import EbayFindingClient
+from ebay.matcher import extract_psa_grade
 
 logger = logging.getLogger(__name__)
 
 
-def search_active_listings(character: str, card_type: str, config: dict) -> list[dict]:
-    """Aktuelle eBay Listings für einen Charakter abrufen.
+def search_active_listings(keywords: str, client: EbayFindingClient, min_grade: int = 8) -> list[dict]:
+    """Aktuelle eBay-Listings für Keywords abrufen.
 
-    Wird in Phase 3 implementiert.
+    Gibt nur Listings zurück die PSA min_grade oder höher enthalten.
     """
-    logger.info("eBay Search — noch nicht implementiert (Phase 3)")
-    return []
+    listings = client.find_active(keywords)
+    filtered = [
+        item for item in listings
+        if (grade := extract_psa_grade(item["title"])) is not None and grade >= min_grade
+    ]
+    logger.debug(f"  '{keywords}': {len(listings)} Treffer, {len(filtered)} mit PSA {min_grade}+")
+    return filtered

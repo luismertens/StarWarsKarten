@@ -278,26 +278,28 @@ def _upsert_cards(cards: list[dict]) -> int:
                     """UPDATE cards SET
                         name = ?, character = ?, card_set = ?, card_type = ?,
                         series_year = ?, numbered_to = ?,
-                        last_sold_usd = ?, updated_at = ?
+                        last_sold_usd = ?, price_grade9 = ?, price_psa10 = ?,
+                        updated_at = ?
                        WHERE id = ?""",
                     (
                         card["name"], card["character"], card["card_set"],
                         card["card_type"], card["series_year"], card["numbered_to"],
-                        card["price_ungraded"], now, existing["id"],
+                        card["price_ungraded"], card["price_grade9"], card["price_psa10"],
+                        now, existing["id"],
                     ),
                 )
             else:
                 conn.execute(
                     """INSERT INTO cards
                         (name, character, card_set, card_type, series_year,
-                         numbered_to, last_sold_usd, pricecharting_link,
-                         last_checked, created_at, updated_at)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                         numbered_to, last_sold_usd, price_grade9, price_psa10,
+                         pricecharting_link, last_checked, created_at, updated_at)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                     (
                         card["name"], card["character"], card["card_set"],
                         card["card_type"], card["series_year"], card["numbered_to"],
-                        card["price_ungraded"], card["pricecharting_link"],
-                        now, now, now,
+                        card["price_ungraded"], card["price_grade9"], card["price_psa10"],
+                        card["pricecharting_link"], now, now, now,
                     ),
                 )
             saved += 1

@@ -18,12 +18,17 @@ def get_connection() -> sqlite3.Connection:
 
 def _run_migrations(conn: sqlite3.Connection) -> None:
     """Schema-Migrationen für bestehende Datenbanken."""
-    # notion_page_id zu cards hinzufügen (SQLite unterstützt kein IF NOT EXISTS bei ALTER)
-    try:
-        conn.execute("ALTER TABLE cards ADD COLUMN notion_page_id TEXT")
-        logger.info("Migration: notion_page_id Spalte hinzugefügt")
-    except sqlite3.OperationalError:
-        pass  # Spalte existiert bereits
+    migrations = [
+        ("notion_page_id TEXT", "notion_page_id"),
+        ("price_grade9 REAL", "price_grade9"),
+        ("price_psa10 REAL", "price_psa10"),
+    ]
+    for col_def, col_name in migrations:
+        try:
+            conn.execute(f"ALTER TABLE cards ADD COLUMN {col_def}")
+            logger.info(f"Migration: {col_name} Spalte hinzugefügt")
+        except sqlite3.OperationalError:
+            pass  # Spalte existiert bereits
 
 
 def init_db() -> None:
