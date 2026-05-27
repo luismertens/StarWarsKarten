@@ -16,6 +16,16 @@ def get_connection() -> sqlite3.Connection:
     return conn
 
 
+def _run_migrations(conn: sqlite3.Connection) -> None:
+    """Schema-Migrationen für bestehende Datenbanken."""
+    # notion_page_id zu cards hinzufügen (SQLite unterstützt kein IF NOT EXISTS bei ALTER)
+    try:
+        conn.execute("ALTER TABLE cards ADD COLUMN notion_page_id TEXT")
+        logger.info("Migration: notion_page_id Spalte hinzugefügt")
+    except sqlite3.OperationalError:
+        pass  # Spalte existiert bereits
+
+
 def init_db() -> None:
     """Alle Tabellen anlegen falls sie noch nicht existieren."""
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -38,6 +48,7 @@ def init_db() -> None:
                 liquidity       TEXT,            -- Hoch / Mittel / Niedrig
                 ebay_link       TEXT,
                 pricecharting_link TEXT,
+                notion_page_id  TEXT,
                 last_checked    TEXT,
                 created_at      TEXT DEFAULT (datetime('now')),
                 updated_at      TEXT DEFAULT (datetime('now'))
@@ -67,10 +78,33 @@ def init_db() -> None:
                 recorded_at TEXT DEFAULT (datetime('now'))
             );
 
+            CREATE TABLE IF NOT EXISTS meta (
+                key     TEXT PRIMARY KEY,
+                value   TEXT
+            );
+
             CREATE INDEX IF NOT EXISTS idx_cards_character ON cards(character);
             CREATE INDEX IF NOT EXISTS idx_cards_type ON cards(card_type);
             CREATE INDEX IF NOT EXISTS idx_deals_status ON deals(status);
             CREATE INDEX IF NOT EXISTS idx_price_history_card ON price_history(card_id);
         """)
 
+        _run_migrations(conn)
+
     logger.info(f"Datenbank initialisiert: {DB_PATH}")
+
+
+def get_meta(key: str) -> str | None:
+    """Metadaten-Wert abrufen."""
+    with get_connection() as conn:
+        row = conn.execute("SELECT value FROM meta WHERE key = ?", (key,)).fetchone()
+        return row["value"] if row else None
+
+
+def set_meta(key: str, value: str) -> None:
+    """Metadaten-Wert setzen oder aktualisieren."""
+    with get_connection() as conn:
+        conn.execute(
+            "INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            (key, value),
+        )

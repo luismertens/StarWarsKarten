@@ -32,13 +32,26 @@ Automatisierter Bot der Star Wars Sammelkarten auf eBay überwacht, Preise analy
 - Charakter-Whitelist-Filter mit Wortgrenzen (verhindert Fehl-Matches)
 - Rate-Limiting: 1,5 Sekunden zwischen Requests
 
+### ✅ Phase 3.5 — Notion Sync + Telegram + Analyzer (abgeschlossen)
+- **Notion Sync** vollständig: 3.463 Karten in Notion-Dashboard synchronisiert
+  - Inkrementeller Sync: nur neue/geänderte Karten werden hochgeladen (fast instant)
+  - `notion_page_id` wird in SQLite gespeichert für spätere Updates
+  - Retry-Logik bei Notion-Fehlern (429/502/503) mit 60s/120s Backoff
+- **Telegram Alerts** fertig: `src/notifier/alerts.py`
+  - `send_deal_alert()` mit formatierter HTML-Nachricht
+  - Test-Nachricht beim Start
+- **Analyzer** fertig: `src/analyzer/pricing.py` + `deals.py`
+  - Marktpreis-Berechnung (Avg, Median, Liquidität) mit Outlier-Filterung
+  - Deal-Erkennung: ≥15% unter Marktdurchschnitt
+- **Bereinigung**: Sticker-Karten, TCG/CCG-Sets, Kakawow aus DB entfernt (→ 3.463 saubere Karten)
+- **SQLite-Migration**: `meta`-Tabelle für Sync-Timestamps, `notion_page_id` in `cards`
+
 ### ⏳ Phase 3 — eBay Integration (wartet auf eBay API Key)
-- eBay Developer Account submitted, wird innerhalb 24h reviewed
+- eBay Developer Account submitted, Key noch ausstehend
 - Nächste Session: eBay Finding API einbinden
 
-### 🔲 Phase 4 — Deal-Erkennung + Telegram Alerts
-### 🔲 Phase 5 — Notion Sync
-### 🔲 Phase 6 — Automatisierung / Deployment
+### 🔲 Phase 4 — Deal-Erkennung + Telegram Alerts (Framework fertig, braucht eBay-Daten)
+### 🔲 Phase 5 — Automatisierung / Deployment
 
 ---
 
@@ -55,10 +68,10 @@ Automatisierter Bot der Star Wars Sammelkarten auf eBay überwacht, Preise analy
 | Tool | Zweck | Status |
 |---|---|---|
 | Python / SQLite | Hauptsprache + lokale DB | ✅ läuft |
-| PriceCharting Scraper | Karten-Datenbank aufbauen | ✅ 4.014 Karten |
+| PriceCharting Scraper | Karten-Datenbank aufbauen | ✅ 3.463 Karten |
 | eBay Finding API | Listings + Sold Prices | ⏳ Key ausstehend |
-| Telegram Bot API | Deal-Alerts senden | ✅ Key vorhanden |
-| Notion API | Dashboard + Sync | ✅ Key vorhanden |
+| Telegram Bot API | Deal-Alerts senden | ✅ implementiert |
+| Notion API | Dashboard + Sync | ✅ 3.463 Karten live |
 
 ---
 
@@ -73,7 +86,7 @@ sw-card-hunter/
 ├── config.yaml                   # Suchparameter, Whitelist, Schwellenwerte
 │
 ├── data/
-│   └── cards.db                  # SQLite — 4.014 Karten gespeichert
+│   └── cards.db                  # SQLite — 3.463 Karten gespeichert
 │
 ├── logs/
 │   └── bot.log                   # Wird beim Start angelegt
@@ -90,14 +103,14 @@ sw-card-hunter/
 │   │   └── sold.py               # 🔲 Sold Listings / Marktpreise
 │   │
 │   ├── analyzer/
-│   │   ├── pricing.py            # 🔲 Durchschnitt, Median berechnen
-│   │   └── deals.py              # 🔲 Deal-Score (15% unter Markt = Alert)
+│   │   ├── pricing.py            # ✅ Durchschnitt, Median, Liquidität
+│   │   └── deals.py              # ✅ Deal-Score (15% unter Markt = Alert)
 │   │
 │   ├── notion/
-│   │   └── sync.py               # 🔲 Karten + Deals nach Notion schreiben
+│   │   └── sync.py               # ✅ 3.463 Karten live in Notion
 │   │
-│   └── telegram/
-│       └── alerts.py             # 🔲 Deal-Benachrichtigungen senden
+│   └── notifier/
+│       └── alerts.py             # ✅ Telegram Deal-Alerts
 │
 └── notebooks/
     └── market_analysis.ipynb     # Manuelle Analysen
@@ -184,16 +197,16 @@ Der Bot startet, baut die DB auf (falls nicht vorhanden) und läuft dann alle 30
 
 ---
 
-## Nächste Session — Phase 3
+## Nächste Session — Phase 3 (eBay Integration)
 
 **Voraussetzung:** eBay App ID, Cert ID, Dev ID in `.env` eintragen.
 
 Was dann gebaut wird:
 1. `src/ebay/sold.py` — Sold Listings der letzten 90 Tage per eBay Finding API
 2. `src/ebay/search.py` — Aktuelle PSA-Listings abrufen
-3. `src/analyzer/pricing.py` — Marktpreise (Avg, Median, Liquidität) berechnen
-4. `src/analyzer/deals.py` — Deal-Erkennung (≥15% unter Markt)
-5. Deal-Ergebnis in SQLite speichern
+3. Deal-Erkennung verbinden (Analyzer ist fertig, braucht nur eBay-Daten)
+4. Telegram-Alert auslösen bei Deal (Alert-Framework fertig)
+5. Deal in Notion Deals-DB schreiben (sync_deal() fertig)
 
 ---
 

@@ -65,9 +65,17 @@ def _parse_price(price_str: str) -> float | None:
 
 
 def _detect_set_type(url_slug: str, set_name: str) -> str:
-    """Kartentyp eines Sets anhand URL und Name bestimmen."""
+    """Kartentyp eines Sets anhand URL und Name bestimmen.
+
+    Gibt 'skip' zurück für Sets die komplett ignoriert werden sollen.
+    """
     slug_lower = url_slug.lower()
     name_lower = set_name.lower()
+
+    # Unerwünschte Sets komplett überspringen
+    skip_patterns = ["sticker", " tcg", "-tcg", " ccg", "-ccg", "unlimited", "young-jedi", "young jedi", "kakawow"]
+    if any(p in slug_lower or p in name_lower for p in skip_patterns):
+        return "skip"
 
     if "autograph" in slug_lower or "autograph" in name_lower:
         return "autograph"
@@ -314,7 +322,7 @@ def scrape_star_wars_cards(config: dict) -> int:
     # Nur relevante Sets verarbeiten
     relevant_sets = [
         s for s in all_sets
-        if (
+        if s["type"] != "skip" and (
             (s["type"] == "autograph" and card_types_cfg.get("autographs", True))
             or (s["type"] == "vintage" and card_types_cfg.get("vintage", True))
             or (s["type"] == "base" and card_types_cfg.get("numbered", True))
