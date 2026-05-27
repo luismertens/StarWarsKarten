@@ -127,7 +127,7 @@ def _handle_deal(listing: dict, card: dict, savings_pct: float, config: dict) ->
 
     logger.info(
         f"DEAL: {card['name']} — ${listing['price']:.2f} "
-        f"({savings_pct:.1f}% unter Markt ${card['avg_price_usd']:.2f})"
+        f"({savings_pct:.1f}% unter Markt ${market_price:.2f})"
     )
 
 

@@ -46,12 +46,26 @@ Automatisierter Bot der Star Wars Sammelkarten auf eBay überwacht, Preise analy
 - **Bereinigung**: Sticker-Karten, TCG/CCG-Sets, Kakawow aus DB entfernt (→ 3.463 saubere Karten)
 - **SQLite-Migration**: `meta`-Tabelle für Sync-Timestamps, `notion_page_id` in `cards`
 
-### ⏳ Phase 3 — eBay Integration (wartet auf eBay API Key)
-- eBay Developer Account submitted, Key noch ausstehend
-- Nächste Session: eBay Finding API einbinden
+### ✅ Phase 3 — eBay Integration (abgeschlossen, Bot läuft live)
+- **eBay Browse API** implementiert (Finding API für neue Accounts gesperrt → Browse API mit OAuth)
+- **Deal-Erkennung live**: erster Zyklus fand 8 Deals, z.B.:
+  - Hayden Christensen Anakin [Red] — $1.499 (**28,6%** unter Markt)
+  - Mark Hamill Luke [Red Refractor] — $2.400 (**15%** unter Markt)
+  - Temuera Morrison Boba Fett [Printing Plate] — $300 (**25%** unter Markt)
+- 85 API-Calls pro Zyklus, 30-Min-Interval, Hard-Stop bei 4.800/Tag
+- Schauspieler→Charakter Mapping (Mark Hamill → Luke Skywalker etc.)
+- Marktpreise aus PriceCharting (last_sold_usd, price_grade9, price_psa10)
+- Deals erscheinen automatisch in Notion + Telegram
 
-### 🔲 Phase 4 — Deal-Erkennung + Telegram Alerts (Framework fertig, braucht eBay-Daten)
-### 🔲 Phase 5 — Automatisierung / Deployment
+### 🔲 Phase 4 — Fine-Tuning (nächste Session)
+- Notion: ALLE Listings im Preisbereich zeigen (nicht nur ≥15% Deals)
+- eBay Sold Search Link pro Notion-Eintrag für manuelle Preisrecherche
+- Interval auf 60 Min erhöhen (Markt ist dünn, 30 Min übertrieben)
+- Character-Whitelist erweitern
+
+### 🔲 Phase 5 — Raspberry Pi Deployment
+- Pi hat Desktop-OS, Setup-Anleitung bereit (systemd-Service)
+- Python 3.11+ prüfen, venv, .env rüberkopieren, Service aktivieren
 
 ---
 
@@ -197,16 +211,15 @@ Der Bot startet, baut die DB auf (falls nicht vorhanden) und läuft dann alle 30
 
 ---
 
-## Nächste Session — Phase 3 (eBay Integration)
+## Nächste Session — Phase 4 Fine-Tuning
 
-**Voraussetzung:** eBay App ID, Cert ID, Dev ID in `.env` eintragen.
+Bot läuft live. Nächste Session:
 
-Was dann gebaut wird:
-1. `src/ebay/sold.py` — Sold Listings der letzten 90 Tage per eBay Finding API
-2. `src/ebay/search.py` — Aktuelle PSA-Listings abrufen
-3. Deal-Erkennung verbinden (Analyzer ist fertig, braucht nur eBay-Daten)
-4. Telegram-Alert auslösen bei Deal (Alert-Framework fertig)
-5. Deal in Notion Deals-DB schreiben (sync_deal() fertig)
+1. **Notion-Dashboard erweitern**: alle aktiven eBay-Listings im Preisbereich eintragen (nicht nur Deals) — User will selbst urteilen
+2. **eBay Sold Search Link** zu jedem Notion-Eintrag hinzufügen für manuelle Marktrecherche
+3. **Interval auf 60 Min** erhöhen (`scheduler_interval_minutes: 60` in config.yaml)
+4. **Character-Whitelist** erweitern nach Wunsch des Users
+5. **Raspberry Pi Deployment** wenn bereit (Anleitung weiter unten)
 
 ---
 
